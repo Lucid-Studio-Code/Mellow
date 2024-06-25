@@ -40,7 +40,7 @@
   </div>
 
   <script>
-    const url = 'https://drive.google.com/file/d/1m6ADDV1j174n63g5cz0iE-SPlPYpsXVF/view?usp=drive_link' ;
+    const url = 'https://drive.google.com/file/d/1m6ADDV1j174n63g5cz0iE-SPlPYpsXVF/view?usp=drive_link';
 
     let pdfDoc = null,
         pageNum = 1,
@@ -50,35 +50,32 @@
         canvas = document.getElementById('pdf-render'),
         ctx = canvas.getContext('2d');
 
-    function renderPage(num) {
+    function renderPage(page) {
       pageRendering = true;
-      pdfDoc.getPage(num).then(function(page) {
-        const viewport = page.getViewport({scale: scale});
-        canvas.height = viewport.height;
-        canvas.width = viewport.width;
+      const viewport = page.getViewport({ scale: scale });
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
 
-        const renderContext = {
-          canvasContext: ctx,
-          viewport: viewport
-        };
-        const renderTask = page.render(renderContext);
+      const renderContext = {
+        canvasContext: ctx,
+        viewport: viewport
+      };
+      const renderTask = page.render(renderContext);
 
-        renderTask.promise.then(function() {
-          pageRendering = false;
-          if (pageNumPending !== null) {
-            renderPage(pageNumPending);
-            pageNumPending = null;
-          }
-        });
+      renderTask.promise.then(function () {
+        pageRendering = false;
+        document.getElementById('page_num').textContent = pageNum;
       });
-      document.getElementById('page_num').textContent = num;
     }
 
     function queueRenderPage(num) {
       if (pageRendering) {
         pageNumPending = num;
       } else {
-        renderPage(num);
+        pdfDoc.getPage(num).then(function(page) {
+          renderPage(page);
+        });
+        pageNum = num;
       }
     }
 
@@ -98,10 +95,12 @@
       queueRenderPage(pageNum);
     }
 
-    pdfjsLib.getDocument(url).promise.then(function(pdfDoc_) {
-      pdfDoc = pdfDoc_;
-      document.getElementById('page_count').textContent = pdfDoc.numPages;
-      renderPage(pageNum);
+    pdfjsLib.getDocument(url).promise.then(function(pdf) {
+      pdfDoc = pdf;
+      document.getElementById('page_count').textContent = pdf.numPages;
+      pdfDoc.getPage(1).then(function(page) {
+        renderPage(page);
+      });
     });
   </script>
 </body>
